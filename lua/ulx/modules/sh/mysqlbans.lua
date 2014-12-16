@@ -56,15 +56,15 @@ gbanid:defaultAccess(ULib.ACCESS_SUPERADMIN)
 gbanid:help("Bans steamid from all servers.")
 
 function ulx.mysqlbansimport(calling_ply)
-	if not ULib.fileExists(ULib.BANS_FILE) then
-		ULib.tsayError(calling_ply, "There are no ULX bans to import.")
+	if not ULib.fileExists("data/ulib/bans_old.txt") then
+		ULib.tsayError(calling_ply, "Bans backup file does not exist. Unable to import.")
 		return
 	end
 	
-	local bans, err = ULib.parseKeyValues(ULib.fileRead(ULib.BANS_FILE))
+	local bans, err = ULib.parseKeyValues(ULib.fileRead("data/ulib/bans_old.txt"))
 	
 	if err then
-		ULib.tsayError(calling_ply, "We were unable to parse the bans file. Maybe it's not formatted correctly?")
+		ULib.tsayError(calling_ply, "We were unable to parse the bans_old.txt. Maybe it's not formatted correctly?")
 		return
 	end
 
@@ -120,9 +120,7 @@ function ulx.mysqlbansimport(calling_ply)
 				ULib.tsay(calling_ply, "Completed " .. completedBans .. "/" .. totalBans .. " bans.")
 				
 				if completedBans == totalBans then
-					ULib.tsay(calling_ply, "All bans have been imported.")
-					ULib.fileDelete(ULib.BANS_FILE)
-					ULib.tsay(calling_ply, "Deleted bans file.")					
+					ULib.tsay(calling_ply, "All bans have been imported.")				
 				end
 			end)
 		end
@@ -132,7 +130,7 @@ local mysqlbansimport = ulx.command("MySQL Bans", "ulx mysqlbansimport", ulx.mys
 mysqlbansimport:defaultAccess(ULib.ACCESS_SUPERADMIN)
 mysqlbansimport:help("Transfers all ULX bans to MySQL. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")
 
-function ulx.mysqlbansexport(calling_ply)
+--[[function ulx.mysqlbansexport(calling_ply)
 	ULib.tsay(calling_ply, "Starting to export bans from MySQL. The server may freeze for a second!")
 
 	local queryStr = [[
@@ -172,12 +170,12 @@ function ulx.mysqlbansexport(calling_ply)
 		end
 		
 		ULib.fileWrite(ULib.BANS_FILE, ULib.makeKeyValues(bans))
-		ULib.tsay(calling_ply, "Export completed.")
+		ULib.tsay(calling_ply, "Export completed. Be sure to remove this plugin before map change or restart.")
 	end)
 end
 local mysqlbansexport = ulx.command("MySQL Bans", "ulx mysqlbansexport", ulx.mysqlbansexport)
 mysqlbansexport:defaultAccess(ULib.ACCESS_SUPERADMIN)
-mysqlbansexport:help("Transfers all MySQL bans to ULX. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")
+mysqlbansexport:help("Transfers all MySQL bans to ULX. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")]]--
 
 local function overrideCommands()
 	-- Override ulx ban

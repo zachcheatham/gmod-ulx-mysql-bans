@@ -36,6 +36,12 @@ function ulx.SQLBans.fetchBans()
 	]]
 
 	ZCore.MySQL.query(queryStr, function(data)
+		-- BACKUP OLD BANS
+		if not ULib.fileExists("data/ulib/bans_old.txt") then
+			ServerLog("First run detected. Backing up bans.txt to bans_old.txt...")
+			ULib.fileWrite("data/ulib/bans_old.txt", ULib.fileRead(ULib.BANS_FILE))
+		end
+	
 		table.Empty(ULib.bans)
 		
 		for _, ban in ipairs(data) do
