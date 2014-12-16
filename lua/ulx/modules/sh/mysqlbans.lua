@@ -1,5 +1,3 @@
-local CATEGORY_NAME = "Utility"
-
 function ulx.gban(calling_ply, target_ply, minutes, reason)
 	if target_ply:IsBot() then
 		ULib.tsayError( calling_ply, "Cannot ban a bot", true )
@@ -14,7 +12,7 @@ function ulx.gban(calling_ply, target_ply, minutes, reason)
 		ulx.fancyLogAdmin(calling_ply, str, target_ply, minutes ~= 0 and minutes or reason, reason)
 	end)
 end
-local gban = ulx.command(CATEGORY_NAME, "ulx gban", ulx.gban, "!gban")
+local gban = ulx.command("Utility", "ulx gban", ulx.gban, "!gban")
 gban:addParam{type=ULib.cmds.PlayerArg}
 gban:addParam{type=ULib.cmds.NumArg, hint="minutes, 0 for perma", ULib.cmds.optional, ULib.cmds.allowTimeString, min=0}
 gban:addParam{type=ULib.cmds.StringArg, hint="reason", ULib.cmds.optional, ULib.cmds.takeRestOfLine, completes=ulx.common_kick_reasons}
@@ -50,12 +48,82 @@ function ulx.gbanid(calling_ply, steamid, minutes, reason)
 		ulx.fancyLogAdmin(calling_ply, str, displayid, minutes ~= 0 and minutes or reason, reason)
 	end)
 end
-local gbanid = ulx.command(CATEGORY_NAME, "ulx gbanid", ulx.gbanid)
+local gbanid = ulx.command("Utility", "ulx gbanid", ulx.gbanid)
 gbanid:addParam{type=ULib.cmds.StringArg, hint="steamid"}
 gbanid:addParam{type=ULib.cmds.NumArg, hint="minutes, 0 for perma", ULib.cmds.optional, ULib.cmds.allowTimeString, min=0}
 gbanid:addParam{type=ULib.cmds.StringArg, hint="reason", ULib.cmds.optional, ULib.cmds.takeRestOfLine, completes=ulx.common_kick_reasons}
 gbanid:defaultAccess(ULib.ACCESS_SUPERADMIN)
 gbanid:help("Bans steamid from all servers.")
+
+function ulx.mysqlbansimport(calling_ply)
+	local bans, err = ULib.parseKeyValues(ULib.fileRead(ULib.BANS_FILE))
+	
+	if err then
+		ULib.tsayError(calling_ply, "We were unable to parse the bans file. Maybe it's missing or not formatted correctly?")
+		return
+	end
+	
+	ULib.tsay(calling_ply, "Ban import started. The server may freeze for a few seconds!")
+	
+	local totalBans = table.Count(bans)
+	local completedBans = 0
+	
+	local server = ZCore.Util.getServerIP()
+	local sqlServer = ZCore.MySQL.escapeStr(server)
+	local sqlBanType = ZCore.MySQL.escapeStr(GetConVarString("gamemode"))
+	
+	for steamid, ban in pairs(bans) do	
+		if type(ban) == "table" and type(steamid) == "string" then			
+			local admin = ban.admin and string.Explode("(", string.Replace(ban.admin, ")", "")) or {"CONSOLE", ""}
+			
+			local sqlSteamID = ZCore.MySQL.escapeStr(steamid)
+			local sqlName = ZCore.MySQL.escapeStr(ban.name and ban.name or "")
+			local sqlReason = ZCore.MySQL.escapeStr(ban.reason)
+			local sqlAdminName = ZCore.MySQL.escapeStr(admin[1])
+			local sqlAdminSteamID = ZCore.MySQL.escapeStr(admin[2])
+			local timestamp = ban.time and tonumber(ban.time) or 0
+			local expiration = ban.unban and tonumber(ban.unban) or 0
+			
+			local queryStr = [[
+				INSERT INTO `bans`
+					(
+						`steamid`,
+						`name`,
+						`reason`,
+						`timestamp`,
+						`expiration`,
+						`admin_steamid`,
+						`admin_name`,
+						`server`,
+						`type`
+					)
+					VALUES (
+						']] .. sqlSteamID .. [[',
+						']] .. sqlName .. [[',
+						']] .. sqlReason .. [[',
+						]] .. timestamp .. [[,
+						]] .. expiration .. [[,
+						']] .. sqlAdminSteamID .. [[',
+						']] .. sqlAdminName .. [[',
+						']] .. sqlServer .. [[',
+						']] .. sqlBanType .. [['
+					)
+			]]
+			
+			ZCore.MySQL.query(queryStr, function()
+				completedBans = completedBans + 1
+				ULib.tsay(calling_ply, "Completed " .. completedBans .. "/" .. totalBans .. " bans.")
+				
+				if completedBans == totalBans then
+					ULib.tsay(calling_ply, "All bans have been imported. Don't do this again or you'll have duplicates!")
+				end
+			end)
+		end
+	end
+end
+local mysqlbansimport = ulx.command("MySQL Bans", "ulx mysqlbansimport", ulx.mysqlbansimport)
+mysqlbansimport:defaultAccess(ULib.ACCESS_SUPERADMIN)
+mysqlbansimport:help("Transfers all ULX bans to MySQL.")
 
 local function overrideCommands()
 	-- Override ulx ban

@@ -24,7 +24,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 	local adminSteamID = IsValid(admin) and admin:SteamID() or ""
 	local timestamp = os.time()
 	local expiration = length == 0 and 0 or os.time() + (length * 60)
-	local banType = global and "GBL" or ulx.SQLBans.Settings.type
+	local banType = global and "global" or GetConVarString("gamemode")
 	local server = ZCore.Util.getServerIP()
 	
 	local sqlSteamID = ZCore.MySQL.escapeStr(steamid)

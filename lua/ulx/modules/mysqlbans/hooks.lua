@@ -1,9 +1,11 @@
-local function onConnected()
+local function onConnected(firstConnect)
 	ulx.SQLBans.createTables()
 	ulx.SQLBans.fetchBans()
-	ulx.SQLBans.checkCurrentPlayers()
+	timer.Simple(1, ulx.SQLBans.checkCurrentPlayers)
 	
-	RunConsoleCommand("ulx", "asay", "Good news, we've re-established connection to bans. Everything will be fine.")
+	if not firstConnect then
+		RunConsoleCommand("ulx", "asay", "Good news, we've re-established connection to bans. Everything will be fine.")
+	end
 end
 hook.Add("ZCore_MySQL_Connected", "BansConnected", onConnected)
 
@@ -24,7 +26,7 @@ local function onPlayerConnect(player)
 				`reason`
 			FROM `bans` WHERE
 				`steamid` = ']] .. ZCore.MySQL.escapeStr(steamid) .. [['
-				AND (`type` = 'GBL' OR `type` = ']] .. ZCore.MySQL.escapeStr(ulx.SQLBans.Settings.type) .. [[')
+				AND (`type` = 'global' OR `type` = ']] .. ZCore.MySQL.escapeStr(GetConVarString("gamemode")) .. [[')
 				AND `unbanned` = 0
 				AND (`expiration` > ]] .. os.time() .. [[ OR `expiration` = 0)
 			ORDER BY `timestamp` DESC

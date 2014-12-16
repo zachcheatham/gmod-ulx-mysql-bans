@@ -10,7 +10,7 @@ function ulx.SQLBans.createTables()
 			`admin_steamid` varchar(20) NOT NULL,
 			`admin_name` varchar(32) NOT NULL,
 			`server` varchar(21) NOT NULL,
-			`type` varchar(3) NOT NULL,
+			`type` varchar(32) NOT NULL,
 			PRIMARY KEY (`id`)
 			)
 	]])
@@ -27,7 +27,7 @@ function ulx.SQLBans.fetchBans()
 			`admin_name`
 		FROM `bans`
 		WHERE
-			(`type` = 'GBL' OR `type` = ']] .. ZCore.MySQL.escapeStr(ulx.SQLBans.Settings.type) .. [[')
+			(`type` = 'global' OR `type` = ']] .. ZCore.MySQL.escapeStr(GetConVarString("gamemode")) .. [[')
 			AND (`expiration` > ]] .. os.time() .. [[ OR `expiration` = 0)
 			AND `unbanned` = 0
 	]]
