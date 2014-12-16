@@ -67,73 +67,117 @@ function ulx.mysqlbansimport(calling_ply)
 		ULib.tsayError(calling_ply, "We were unable to parse the bans file. Maybe it's not formatted correctly?")
 		return
 	end
-	
-	print "HA"
+
 	ULib.tsay(calling_ply, "Ban import started. The server may freeze for a few seconds!")
+
+	local totalBans = table.Count(bans)
+	local completedBans = 0
 	
-	timer.simple(1, function()
-		local totalBans = table.Count(bans)
-		local completedBans = 0
-		
-		local server = ZCore.Util.getServerIP()
-		local sqlServer = ZCore.MySQL.escapeStr(server)
-		local sqlBanType = ZCore.MySQL.escapeStr(GetConVarString("gamemode"))
-		
-		for steamid, ban in pairs(bans) do	
-			if type(ban) == "table" and type(steamid) == "string" then			
-				local admin = ban.admin and string.Explode("(", string.Replace(ban.admin, ")", "")) or {"CONSOLE", ""}
+	local server = ZCore.Util.getServerIP()
+	local sqlServer = ZCore.MySQL.escapeStr(server)
+	local sqlBanType = ZCore.MySQL.escapeStr(GetConVarString("gamemode"))
+	
+	for steamid, ban in pairs(bans) do	
+		if type(ban) == "table" and type(steamid) == "string" then			
+			local admin = ban.admin and string.Explode("(", string.Replace(ban.admin, ")", "")) or {"CONSOLE", ""}
+			
+			local sqlSteamID = ZCore.MySQL.escapeStr(steamid)
+			local sqlName = ZCore.MySQL.escapeStr(ban.name and ban.name or "")
+			local sqlReason = ZCore.MySQL.escapeStr(ban.reason)
+			local sqlAdminName = ZCore.MySQL.escapeStr(admin[1])
+			local sqlAdminSteamID = ZCore.MySQL.escapeStr(admin[2])
+			local timestamp = ban.time and tonumber(ban.time) or 0
+			local expiration = ban.unban and tonumber(ban.unban) or 0
+			
+			local queryStr = [[
+				INSERT INTO `bans`
+					(
+						`steamid`,
+						`name`,
+						`reason`,
+						`timestamp`,
+						`expiration`,
+						`admin_steamid`,
+						`admin_name`,
+						`server`,
+						`type`
+					)
+					VALUES (
+						']] .. sqlSteamID .. [[',
+						']] .. sqlName .. [[',
+						']] .. sqlReason .. [[',
+						]] .. timestamp .. [[,
+						]] .. expiration .. [[,
+						']] .. sqlAdminSteamID .. [[',
+						']] .. sqlAdminName .. [[',
+						']] .. sqlServer .. [[',
+						']] .. sqlBanType .. [['
+					)
+			]]
+			
+			ZCore.MySQL.query(queryStr, function()
+				completedBans = completedBans + 1
+				ULib.tsay(calling_ply, "Completed " .. completedBans .. "/" .. totalBans .. " bans.")
 				
-				local sqlSteamID = ZCore.MySQL.escapeStr(steamid)
-				local sqlName = ZCore.MySQL.escapeStr(ban.name and ban.name or "")
-				local sqlReason = ZCore.MySQL.escapeStr(ban.reason)
-				local sqlAdminName = ZCore.MySQL.escapeStr(admin[1])
-				local sqlAdminSteamID = ZCore.MySQL.escapeStr(admin[2])
-				local timestamp = ban.time and tonumber(ban.time) or 0
-				local expiration = ban.unban and tonumber(ban.unban) or 0
-				
-				local queryStr = [[
-					INSERT INTO `bans`
-						(
-							`steamid`,
-							`name`,
-							`reason`,
-							`timestamp`,
-							`expiration`,
-							`admin_steamid`,
-							`admin_name`,
-							`server`,
-							`type`
-						)
-						VALUES (
-							']] .. sqlSteamID .. [[',
-							']] .. sqlName .. [[',
-							']] .. sqlReason .. [[',
-							]] .. timestamp .. [[,
-							]] .. expiration .. [[,
-							']] .. sqlAdminSteamID .. [[',
-							']] .. sqlAdminName .. [[',
-							']] .. sqlServer .. [[',
-							']] .. sqlBanType .. [['
-						)
-				]]
-				
-				ZCore.MySQL.query(queryStr, function()
-					completedBans = completedBans + 1
-					ULib.tsay(calling_ply, "Completed " .. completedBans .. "/" .. totalBans .. " bans.")
-					
-					if completedBans == totalBans then
-						ULib.tsay(calling_ply, "All bans have been imported.")
-						ULib.fileDelete(ULib.BANS_FILE)
-						ULib.tsay(calling_ply, "Deleted bans file.")					
-					end
-				end)
-			end
+				if completedBans == totalBans then
+					ULib.tsay(calling_ply, "All bans have been imported.")
+					ULib.fileDelete(ULib.BANS_FILE)
+					ULib.tsay(calling_ply, "Deleted bans file.")					
+				end
+			end)
 		end
-	end)
+	end
 end
 local mysqlbansimport = ulx.command("MySQL Bans", "ulx mysqlbansimport", ulx.mysqlbansimport)
 mysqlbansimport:defaultAccess(ULib.ACCESS_SUPERADMIN)
-mysqlbansimport:help("Transfers all ULX bans to MySQL.")
+mysqlbansimport:help("Transfers all ULX bans to MySQL. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")
+
+function ulx.mysqlbansexport(calling_ply)
+	ULib.tsay(calling_ply, "Starting to export bans from MySQL. The server may freeze for a second!")
+
+	local queryStr = [[
+		SELECT
+			`steamid`,
+			`name`,
+			`reason`,
+			`timestamp`,
+			`expiration`,
+			`admin_name`,
+			`admin_steamid`
+		FROM `bans`
+		WHERE
+			(`type` = 'global' OR `type` = ']] .. ZCore.MySQL.escapeStr(GetConVarString("gamemode")) .. [[')
+			AND (`expiration` > ]] .. os.time() .. [[ OR `expiration` = 0)
+			AND `unbanned` = 0
+	]]
+	
+	ZCore.MySQL.query(queryStr, function(data)
+		local bans = {}
+	
+		for _, ban in ipairs(data) do
+			local t = {}
+			t.name = ban.name
+			t.steamID = ban.steamid
+			t.reason = ban.reason
+			t.time = ban.timestamp
+			t.unban = ban.expiration
+			
+			if ban.admin_name == "CONSOLE" then
+				t.admin = "(Console)"
+			else
+				t.admin = ban.admin_name .. "(" .. ban.admin_steamid .. ")"
+			end
+			
+			bans[ban.steamid] = t
+		end
+		
+		ULib.fileWrite(ULib.BANS_FILE, ULib.makeKeyValues(bans))
+		ULib.tsay(calling_ply, "Export completed.")
+	end)
+end
+local mysqlbansexport = ulx.command("MySQL Bans", "ulx mysqlbansexport", ulx.mysqlbansexport)
+mysqlbansexport:defaultAccess(ULib.ACCESS_SUPERADMIN)
+mysqlbansexport:help("Transfers all MySQL bans to ULX. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")
 
 local function overrideCommands()
 	-- Override ulx ban

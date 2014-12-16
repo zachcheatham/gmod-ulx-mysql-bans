@@ -9,10 +9,13 @@ function ulx.SQLBans.createTables()
 			`expiration` int(10) NOT NULL,
 			`admin_steamid` varchar(20) NOT NULL,
 			`admin_name` varchar(32) NOT NULL,
+			`unbanned` tinyint(1) NOT NULL DEFAULT '0',
+			`unban_admin_name` varchar(32) DEFAULT NULL,
+			`unban_admin_steamid` varchar(20) DEFAULT NULL,
 			`server` varchar(21) NOT NULL,
 			`type` varchar(32) NOT NULL,
 			PRIMARY KEY (`id`)
-			)
+		)
 	]])
 end
 
