@@ -130,53 +130,6 @@ local mysqlbansimport = ulx.command("MySQL Bans", "ulx mysqlbansimport", ulx.mys
 mysqlbansimport:defaultAccess(ULib.ACCESS_SUPERADMIN)
 mysqlbansimport:help("Transfers all ULX bans to MySQL. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")
 
---[[function ulx.mysqlbansexport(calling_ply)
-	ULib.tsay(calling_ply, "Starting to export bans from MySQL. The server may freeze for a second!")
-
-	local queryStr = [[
-		SELECT
-			`steamid`,
-			`name`,
-			`reason`,
-			`timestamp`,
-			`expiration`,
-			`admin_name`,
-			`admin_steamid`
-		FROM `bans`
-		WHERE
-			(`type` = 'global' OR `type` = ']] .. ZCore.MySQL.escapeStr(GetConVarString("gamemode")) .. [[')
-			AND (`expiration` > ]] .. os.time() .. [[ OR `expiration` = 0)
-			AND `unbanned` = 0
-	]]
-	
-	ZCore.MySQL.query(queryStr, function(data)
-		local bans = {}
-	
-		for _, ban in ipairs(data) do
-			local t = {}
-			t.name = ban.name
-			t.steamID = ban.steamid
-			t.reason = ban.reason
-			t.time = ban.timestamp
-			t.unban = ban.expiration
-			
-			if ban.admin_name == "CONSOLE" then
-				t.admin = "(Console)"
-			else
-				t.admin = ban.admin_name .. "(" .. ban.admin_steamid .. ")"
-			end
-			
-			bans[ban.steamid] = t
-		end
-		
-		ULib.fileWrite(ULib.BANS_FILE, ULib.makeKeyValues(bans))
-		ULib.tsay(calling_ply, "Export completed. Be sure to remove this plugin before map change or restart.")
-	end)
-end
-local mysqlbansexport = ulx.command("MySQL Bans", "ulx mysqlbansexport", ulx.mysqlbansexport)
-mysqlbansexport:defaultAccess(ULib.ACCESS_SUPERADMIN)
-mysqlbansexport:help("Transfers all MySQL bans to ULX. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")]]--
-
 local function overrideCommands()
 	-- Override ulx ban
 	ULib.cmds.translatedCmds["ulx ban"].fn = function(calling_ply, target_ply, minutes, reason)
