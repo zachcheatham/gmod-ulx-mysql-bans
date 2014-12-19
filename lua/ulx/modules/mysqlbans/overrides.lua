@@ -32,3 +32,136 @@ end
 
 function ULib.refreshBans()
 end
+
+local function overrideCommands()
+	-- Override ulx ban
+	ULib.cmds.translatedCmds["ulx ban"].fn = function(calling_ply, target_ply, minutes, reason)
+		if target_ply:IsBot() then
+			ULib.tsayError( calling_ply, "Cannot ban a bot", true )
+			return
+		end
+		
+		ulx.SQLBans.ban(target_ply:SteamID(), reason, minutes, calling_ply, false, function()
+			local time = "for #i minute(s)"
+			if minutes == 0 then time = "permanently" end
+			local str = "#A banned #T " .. time
+			if reason and reason ~= "" then str = str .. " (#s)" end
+			ulx.fancyLogAdmin(calling_ply, str, target_ply, minutes ~= 0 and minutes or reason, reason)
+		end)
+	end
+	
+	-- Override ulx banid
+	ULib.cmds.translatedCmds["ulx banid"].fn = function(calling_ply, steamid, minutes, reason)
+		steamid = steamid:upper()
+		if not ULib.isValidSteamID(steamid) then
+			ULib.tsayError(calling_ply, "Invalid steamid.")
+			return
+		end
+
+		ulx.SQLBans.ban(steamid, reason, minutes, calling_ply, false, function()
+			local name
+			local plys = player.GetAll()
+			for i=1, #plys do
+				if plys[i]:SteamID() == steamid then
+					name = plys[i]:Nick()
+					break
+				end
+			end
+
+			local time = "for #i minute(s)"
+			if minutes == 0 then time = "permanently" end
+			local str = "#A banned steamid #s "
+			displayid = steamid
+			if name then
+				displayid = displayid .. "(" .. name .. ") "
+			end
+			str = str .. time
+			if reason and reason ~= "" then str = str .. " (#4s)" end
+			ulx.fancyLogAdmin(calling_ply, str, displayid, minutes ~= 0 and minutes or reason, reason)
+		end)
+	end
+	
+	-- Override ulx unban
+	ULib.cmds.translatedCmds["ulx unban"].fn = function(calling_ply, steamid)
+		steamid = steamid:upper()
+		if not ULib.isValidSteamID( steamid ) then
+			ULib.tsayError( calling_ply, "Invalid steamid." )
+			return
+		end
+		
+		local name = ULib.bans[steamid] and ULib.bans[steamid].name
+		
+		ulx.SQLBans.unban(steamid, calling_ply, function()
+			if name then
+				ulx.fancyLogAdmin(calling_ply, "#A unbanned steamid #s", steamid .. " (" .. name .. ")")
+			else
+				ulx.fancyLogAdmin(calling_ply, "#A unbanned steamid #s", steamid)
+			end
+		end)
+	end
+	
+	-- Override xgui modify ban
+	xgui.cmds["updateBan"] = function(ply, args)
+		local access, accessTag = ULib.ucl.query( ply, "ulx ban" )
+		if not access then
+			ULib.tsayError( ply, "Error editing ban: You must have access to ulx ban, " .. ply:Nick() .. "!", true )
+			return
+		end
+
+		local steamID = args[1]
+		local bantime = tonumber( args[2] )
+		local reason = args[3]
+		local name = args[4]
+
+		-- Check restrictions
+		local cmd = ULib.cmds.translatedCmds[ "ulx ban" ]
+		local accessPieces = {}
+		if accessTag then
+			accessPieces = ULib.splitArgs( accessTag, "<", ">" )
+		end
+		
+		-- Ban length
+		local argInfo = cmd.args[3]
+		local success, err = argInfo.type:parseAndValidate( ply, bantime, argInfo, accessPieces[2] )
+		if not success then
+			ULib.tsayError( ply, "Error editing ban: " .. err, true )
+			return
+		end
+		
+		local expiration = ULib.bans[steamid].time + (bantime * 60)
+
+		-- Reason
+		local argInfo = cmd.args[4]
+		local success, err = argInfo.type:parseAndValidate( ply, reason, argInfo, accessPieces[3] )
+		if not success then
+			ULib.tsayError( ply, "Error editing ban: You did not specify a valid reason, " .. ply:Nick() .. "!", true )
+			return
+		end
+
+		-- ID
+		local id = ULib.bans[steamid].id
+		
+		local queryStr = [[
+			UPDATE `bans`
+			SET
+				`reason` = ']] .. ZCore.MySQL.escapeStr(reason) .. [[',
+				`expiration` = ]] .. expiration .. [[,
+				`name` = ']] .. ZCore.MySQL.escapeStr(name) .. [['
+			WHERE
+				`id` = ]] .. id
+
+		ZCore.MySQL.query(queryStr, function()
+			ULib.bans[steamid].reason = reason
+			ULib.bans[steamid].unban = expiration
+			ULib.bans[steamid].name = name
+		
+			-- UPDATE XGUI
+			ULib.addBan("XGUI_SUCKS")
+		end)
+	end
+end
+
+if SERVER then
+	hook.Add("InitPostEntity", "SQLBans_CommandOverride", overrideCommands)
+	--overrideCommands()
+end

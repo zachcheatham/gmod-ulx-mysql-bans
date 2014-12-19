@@ -3,8 +3,8 @@ function ulx.SQLBans.createTables()
 		CREATE TABLE IF NOT EXISTS `bans` (
 			`id` int(11) NOT NULL AUTO_INCREMENT,
 			`steamid` varchar(20) NOT NULL,
-			`name` varchar(32) NOT NULL,
-			`reason` text NOT NULL,
+			`name` varchar(32) DEFAULT NULL,
+			`reason` text,
 			`timestamp` int(10) NOT NULL,
 			`expiration` int(10) NOT NULL,
 			`admin_steamid` varchar(20) NOT NULL,
@@ -22,6 +22,7 @@ end
 function ulx.SQLBans.fetchBans()
 	local queryStr = [[
 		SELECT
+			`id`,
 			`steamid`,
 			`name`,
 			`reason`,
@@ -46,6 +47,7 @@ function ulx.SQLBans.fetchBans()
 		
 		for _, ban in ipairs(data) do
 			local t = {}
+			t.id = ban.id
 			t.name = ban.name
 			t.reason = ban.reason
 			t.time = ban.timestamp

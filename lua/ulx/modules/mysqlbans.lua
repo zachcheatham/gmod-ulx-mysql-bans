@@ -19,7 +19,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 	
 	length = tonumber(length)
 	
-	local name = IsValid(ply) and ply:Name() or ""
+	local name = IsValid(ply) and ("'" .. ply:Name() .. "'") or "NULL"
 	local adminName = IsValid(admin) and admin:Name() or "CONSOLE"
 	local adminSteamID = IsValid(admin) and admin:SteamID() or ""
 	local timestamp = os.time()
@@ -61,7 +61,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 			)
 	]]
 	
-	ZCore.MySQL.query(queryStr, function()
+	ZCore.MySQL.query(queryStr, function(data, lastInsertID)
 		-- Callback
 		if onSuccess then
 			onSuccess()
@@ -84,6 +84,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 		t.time = timestamp
 		t.unban = expiration
 		t.admin = adminName
+		t.id = lastInsertID
 
 		ULib.bans[steamid] = t
 		
@@ -93,7 +94,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 	end)
 end
 
-function ulx.SQLBans.unban(steamid, admin)
+function ulx.SQLBans.unban(steamid, admin, callback)
 	local sqlSteamID = ZCore.MySQL.escapeStr(steamid)
 	local adminName = IsValid(admin) and ZCore.MySQL.escapeStr(admin:Name()) or "CONSOLE"
 	local adminSteamID = IsValid(admin) and ZCore.MySQL.escapeStr(admin:SteamID()) or ""
@@ -107,7 +108,7 @@ function ulx.SQLBans.unban(steamid, admin)
 			WHERE
 				(`expiration` = 0 OR `expiration` > ]] .. os.time() .. [[)
 				AND `steamid` = ']] .. steamid .. [[']]
-	)
+	, callback)
 	
 	-- Remove from local storage (FOR F**KING XGUI)
 	ULib.bans[steamid] = nil
