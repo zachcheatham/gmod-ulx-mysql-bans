@@ -79,7 +79,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 		
 		-- Save into local storage (FOR F**KING XGUI)
 		local t = {}
-		t.name = name
+		t.name = (name == "NULL") and nil or name
 		t.reason = reason
 		t.time = timestamp
 		t.unban = expiration
