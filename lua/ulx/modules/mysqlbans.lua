@@ -50,7 +50,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 			)
 			VALUES (
 				']] .. sqlSteamID .. [[',
-				']] .. sqlName .. [[',
+				]] .. sqlName .. [[,
 				']] .. sqlReason .. [[',
 				]] .. timestamp .. [[,
 				]] .. expiration .. [[,
