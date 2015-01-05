@@ -19,7 +19,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 	
 	length = tonumber(length)
 	
-	local name = IsValid(ply) and ("'" .. ply:Name() .. "'") or "NULL"
+	local name = IsValid(ply) and ply:Name() or nil
 	local adminName = IsValid(admin) and admin:Name() or "CONSOLE"
 	local adminSteamID = IsValid(admin) and admin:SteamID() or ""
 	local timestamp = os.time()
@@ -28,7 +28,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 	local server = ZCore.Util.getServerIP()
 	
 	local sqlSteamID = ZCore.MySQL.escapeStr(steamid)
-	local sqlName = ZCore.MySQL.escapeStr(name)
+	local sqlName = name and ("'" .. ZCore.MySQL.escapeStr(name) .. "'") or "NULL"
 	local sqlReason = ZCore.MySQL.escapeStr(reason)
 	local sqlAdminName = ZCore.MySQL.escapeStr(adminName)
 	local sqlAdminSteamID = ZCore.MySQL.escapeStr(adminSteamID)
@@ -79,7 +79,7 @@ function ulx.SQLBans.ban(steamid, reason, length, admin, global, onSuccess)
 		
 		-- Save into local storage (FOR F**KING XGUI)
 		local t = {}
-		t.name = (name == "NULL") and nil or name
+		t.name = name
 		t.reason = reason
 		t.time = timestamp
 		t.unban = expiration
