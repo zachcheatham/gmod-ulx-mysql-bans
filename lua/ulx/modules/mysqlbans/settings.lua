@@ -1,2 +1,2 @@
 ulx.SQLBans.Settings = {}
-ulx.SQLBans.Settings.appealSite = ""
+ulx.SQLBans.Settings.appealSite = "www.kbzgaming.com"

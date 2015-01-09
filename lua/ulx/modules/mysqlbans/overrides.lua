@@ -105,14 +105,14 @@ local function overrideCommands()
 	xgui.cmds["updateBan"] = function(ply, args)
 		local access, accessTag = ULib.ucl.query( ply, "ulx ban" )
 		if not access then
-			ULib.tsayError( ply, "Error editing ban: You must have access to ulx ban, " .. ply:Nick() .. "!", true )
+			ULib.tsayError(ply, "Error editing ban: You must have access to ulx ban, " .. ply:Nick() .. "!", true )
 			return
 		end
 
 		local steamID = args[1]
 		local bantime = tonumber( args[2] )
 		local reason = args[3]
-		local name = args[4]
+		local name = (string.len(args[4]) > 0) and args[4] or nil
 
 		-- Check restrictions
 		local cmd = ULib.cmds.translatedCmds[ "ulx ban" ]
@@ -142,7 +142,7 @@ local function overrideCommands()
 		-- ID
 		local id = ULib.bans[steamID].id
 		
-		local sqlName = (name and string.len(name) > 0) and ("'" .. ZCore.MySQL.escapeStr(name) .. "'") or "NULL"
+		local sqlName = name and ("'" .. ZCore.MySQL.escapeStr(name) .. "'") or "NULL"
 		local queryStr = [[
 			UPDATE `bans`
 			SET
