@@ -55,7 +55,7 @@ gbanid:addParam{type=ULib.cmds.StringArg, hint="reason", ULib.cmds.optional, ULi
 gbanid:defaultAccess(ULib.ACCESS_SUPERADMIN)
 gbanid:help("Bans steamid from all servers.")
 
-function ulx.mysqlbansimport(calling_ply)
+/*function ulx.mysqlbansimport(calling_ply)
 	if not ULib.fileExists("data/ulib/bans_old.txt") then
 		ULib.tsayError(calling_ply, "Bans backup file does not exist. Unable to import.")
 		return
@@ -128,7 +128,7 @@ function ulx.mysqlbansimport(calling_ply)
 end
 local mysqlbansimport = ulx.command("MySQL Bans", "ulx mysqlbansimport", ulx.mysqlbansimport)
 mysqlbansimport:defaultAccess(ULib.ACCESS_SUPERADMIN)
-mysqlbansimport:help("Transfers all ULX bans to MySQL. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")
+mysqlbansimport:help("Transfers all ULX bans to MySQL. DO NOT USE THIS UNLESS YOU KNOW WHAT YOU'RE DOING!")*/
 
 function overrideXGUIElements()
 	function xgui.ShowBanWindow( ply, ID, doFreeze, isUpdate, bandata )
@@ -266,14 +266,9 @@ function overrideXGUIElements()
 				end
 				xgui_banwindow:Remove()
 			else
-				local ply = ULib.getUser( name:GetValue() )
-				if ply then
-					local cmd = globalBan:GetChecked() and "gban" or "ban"
-					RunConsoleCommand( "ulx", cmd, "$" .. ULib.getUniqueIDForPlayer( ply ), banpanel:GetValue(), reason:GetValue() )
-					xgui_banwindow:Remove()
-					return
-				end
-				Derma_Message( "Invalid SteamID, player name, or multiple player targets found!" )
+				-- I don't think it was my fault, but if the provided SteamID was invalid and it decides to ban
+				-- by Name, it would ban me instead of failing. I removed that functionality.
+				Derma_Message( "Invalid SteamID!" )
 			end
 		end
 
@@ -284,5 +279,5 @@ end
 
 if CLIENT then
 	hook.Add("InitPostEntity", "SQLBans_XGUIOverrides", overrideXGUIElements)
-	overrideXGUIElements()
+	--overrideXGUIElements()
 end
