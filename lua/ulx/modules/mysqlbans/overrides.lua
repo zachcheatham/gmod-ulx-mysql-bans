@@ -1,3 +1,4 @@
+
 ULib.ban = function(ply, time, reason, admin)
 	if not time or type(time) ~= "number" then
 		time = 0
@@ -16,7 +17,7 @@ end
 
 function ULib.addBan(steamid, length, reason, name, admin)
 	-- steamid is XGUI_SUCKS when we call this function in ulx.SQLBans.addban to update XGUI
-	-- Don't want to create an infinite loop!
+	-- Don't want to create an infinite loop!	
 	if steamid ~= "XGUI_SUCKS" then
 		ulx.SQLBans.ban(steamid, reason, length, admin, false)
 	end
@@ -128,7 +129,7 @@ local function overrideCommands()
 			return
 		end
 		
-		local expiration = ULib.bans[steamid].time + (bantime * 60)
+		local expiration = ULib.bans[steamID].time + (bantime * 60)
 
 		-- Reason
 		local argInfo = cmd.args[4]
@@ -139,29 +140,31 @@ local function overrideCommands()
 		end
 
 		-- ID
-		local id = ULib.bans[steamid].id
+		local id = ULib.bans[steamID].id
 		
+		local sqlName = (name and string.len(name) > 0) and ("'" .. ZCore.MySQL.escapeStr(name) .. "'") or "NULL"
 		local queryStr = [[
 			UPDATE `bans`
 			SET
 				`reason` = ']] .. ZCore.MySQL.escapeStr(reason) .. [[',
 				`expiration` = ]] .. expiration .. [[,
-				`name` = ']] .. ZCore.MySQL.escapeStr(name) .. [['
+				`name` = ]] .. sqlName .. [[
 			WHERE
 				`id` = ]] .. id
 
 		ZCore.MySQL.query(queryStr, function()
-			ULib.bans[steamid].reason = reason
-			ULib.bans[steamid].unban = expiration
-			ULib.bans[steamid].name = name
+			ULib.bans[steamID].reason = reason
+			ULib.bans[steamID].unban = expiration
+			ULib.bans[steamID].name = name
 		
 			-- UPDATE XGUI
 			ULib.addBan("XGUI_SUCKS")
+			
+			--xgui.sendDataTable({}, "bans")
 		end)
 	end
 end
 
 if SERVER then
 	hook.Add("InitPostEntity", "SQLBans_CommandOverride", overrideCommands)
-	--overrideCommands()
 end
