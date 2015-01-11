@@ -163,6 +163,39 @@ local function overrideCommands()
 			--xgui.sendDataTable({}, "bans")
 		end)
 	end
+	
+	-- Override GMOD's ban function
+	local pmeta = FindMetaTable("Player")
+	function pmeta:Ban(minutes)
+		if self:IsBot() then
+			return
+		end
+		
+		ulx.SQLBans.ban(self:SteamID(), nil, minutes, nil, false, function()
+			local time = "for #i minute(s)"
+			if minutes == 0 then time = "permanently" end
+			local str = "#A banned #T " .. time
+			if reason and reason ~= "" then str = str .. " (#s)" end
+			ulx.fancyLogAdmin(nil, str, self, minutes ~= 0 and minutes or reason, reason)
+		end)
+	end
+	
+	-- Override TTT's ban function
+	if pmeta.KickBan then
+		function pmeta:KickBan(minutes, reason)
+			if self:IsBot() then
+				return
+			end
+			
+			ulx.SQLBans.ban(self:SteamID(), reason, minutes, nil, false, function()
+				local time = "for #i minute(s)"
+				if minutes == 0 then time = "permanently" end
+				local str = "#A banned #T " .. time
+				if reason and reason ~= "" then str = str .. " (#s)" end
+				ulx.fancyLogAdmin(nil, str, self, minutes ~= 0 and minutes or reason, reason)
+			end)
+		end
+	end
 end
 
 if SERVER then
