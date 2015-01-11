@@ -129,7 +129,7 @@ local function overrideCommands()
 			return
 		end
 		
-		local expiration = ULib.bans[steamID].time + (bantime * 60)
+		local expiration = (bantime > 0) and ULib.bans[steamID].time + (bantime * 60) or 0
 
 		-- Reason
 		local argInfo = cmd.args[4]
