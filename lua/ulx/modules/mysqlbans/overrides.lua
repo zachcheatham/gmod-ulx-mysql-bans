@@ -42,6 +42,8 @@ local function overrideCommands()
 			return
 		end
 		
+		return
+		
 		ulx.SQLBans.ban(target_ply:SteamID(), reason, minutes, calling_ply, false, function()
 			local time = "for #i minute(s)"
 			if minutes == 0 then time = "permanently" end
@@ -176,7 +178,7 @@ local function overrideCommands()
 			if minutes == 0 then time = "permanently" end
 			local str = "#A banned #T " .. time
 			if reason and reason ~= "" then str = str .. " (#s)" end
-			ulx.fancyLogAdmin(nil, str, self, minutes ~= 0 and minutes or reason, reason)
+			ulx.fancyLogAdmin(ents.Create("NULL"), str, self, minutes ~= 0 and minutes or reason, reason)
 		end)
 	end
 	
@@ -192,7 +194,7 @@ local function overrideCommands()
 				if minutes == 0 then time = "permanently" end
 				local str = "#A banned #T " .. time
 				if reason and reason ~= "" then str = str .. " (#s)" end
-				ulx.fancyLogAdmin(nil, str, self, minutes ~= 0 and minutes or reason, reason)
+				ulx.fancyLogAdmin(ents.Create("NULL"), str, self, minutes ~= 0 and minutes or reason, reason)
 			end)
 		end
 	end
