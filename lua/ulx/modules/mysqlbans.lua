@@ -117,3 +117,31 @@ function ulx.SQLBans.unban(steamid, admin, callback)
 	-- We put "XGUI_SUCKS" so we don't create a loop since unBan calls this
 	ULib.unban(steamid, "XGUI_SUCKS")
 end
+
+-- banned_user.cfg
+function ulx.SQLBans.cleanBannedUsersCfg()
+	if ULib.fileExists("cfg/banned_user.cfg") then
+		local bannedUsers = ULib.fileRead("cfg/banned_user.cfg");
+		bannedUsers = string.Replace(bannedUsers, "\r", "")
+		
+		local bans = string.Explode("\n", bannedUsers)
+		for _, ban in ipairs(bans) do
+			ban = string.Trim(ban)
+			
+			if string.len(ban) > 0 then
+				local banInfo = string.Explode(" ", ban)
+				if table.Count(banInfo) > 2 then
+					local steamID = banInfo[3]
+					steamID = string.Trim(steamID)
+					
+					ULib.queueFunctionCall(game.ConsoleCommand, "removeid " .. steamID .. "\n")
+				else
+					ErrorNoHalt("[MySQL Bans] Malformed entry in banned_users.cfg: Cannot remove \"" .. ban .. "\"")
+				end
+			end
+		end
+		
+		ULib.queueFunctionCall(RunConsoleCommand, "writeid")
+	end
+end
+ulx.SQLBans.cleanBannedUsersCfg()
