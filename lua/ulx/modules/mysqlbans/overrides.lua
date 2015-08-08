@@ -200,6 +200,14 @@ local function overrideCommands()
 	end
 end
 
+-- I cannot even believe I had to commit to this hack
+local oldTimerFunction = timer.Create
+function timer.Create(id, delay, reps, func)
+	if string.sub(id, 1, 10) ~= "xgui_unban" then
+		oldTimerFunction(id, delay, reps, func)
+	end
+end
+
 if SERVER then
 	hook.Add("InitPostEntity", "SQLBans_CommandOverride", overrideCommands)
 end
