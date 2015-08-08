@@ -16,6 +16,34 @@ function ulx.SQLBans.checkCurrentPlayers()
 	end
 end
 
+local function secondsToString(seconds)
+	local hours = math.floor(seconds / 3600)
+	local minutes = math.floor((seconds % 3600) / 60)
+	local seconds = math.floor(seconds % 60)
+
+	local str = ""
+	
+	if hours == 1 then
+		str = str .. tostring(hours) .. " hour "
+	elseif hours > 1 then
+		str = str .. tostring(hours) .. " hours "
+	end
+	
+	if minutes == 1 then
+		str = str .. tostring(minutes) .. " minute "
+	elseif minutes > 1 then
+		str = str .. tostring(minutes) .. " minutes "
+	end
+	
+	if seconds == 1 then
+		str = str .. tostring(seconds) .. " second"
+	elseif seconds > 1 or (minutes == 0 and hours == 0) then
+		str = str .. tostring(seconds) .. " seconds"
+	end
+	
+	return str:gsub("^%s*(.-)%s*$", "%1")
+end
+
 function ulx.SQLBans.createKickMessage(reason, expiration)
 	local remaining = tonumber(expiration) - os.time()
 	local kickReason
@@ -38,9 +66,9 @@ function ulx.SQLBans.createKickMessage(reason, expiration)
 		end
 
 		if ulx.SQLBans.Settings.appealSite then
-			kickReason = kickReason .. " Please wait " .. remaining  .. "s or make an appeal at " .. ulx.SQLBans.Settings.appealSite
+			kickReason = kickReason .. " Please wait " .. secondsToString(remaining)  .. " or make an appeal at " .. ulx.SQLBans.Settings.appealSite
 		else
-			kickReason = kickReason .. " Please wait " .. remaining  .. "s"
+			kickReason = kickReason .. " Please wait " .. secondsToString(remaining)  .. "."
 		end
 	end
 	
