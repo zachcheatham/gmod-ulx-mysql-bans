@@ -36,7 +36,7 @@ local function onPlayerConnect(player)
 		ZCore.MySQL.queryRow(queryStr, function(data)
 			if data then
 				game.ConsoleCommand(string.format("kickid %s %s\n", steamid, ulx.SQLBans.createKickMessage(data.reason, data.expiration)))
-				ulx.SQLBans.alertConnectAttempt((string.len(data.name) > 0 and data.name or player.name), steamid, data.reason)
+				ulx.SQLBans.alertConnectAttempt(((data.name and string.len(data.name) > 0) and data.name or player.name), steamid, data.reason)
 			end
 		end)
 	end
